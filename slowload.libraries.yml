@@ -1,0 +1,12 @@
+drupal.slowload.admin:
+  version: VERSION
+  css:
+    theme:
+      css/slowload.admin.css: {}
+slowload:
+  version: VERSION
+  js:
+    libraries/slowload/js/slowload.js: {}
+  css:
+    theme:
+      libraries/slowload/css/slowload.css: {}

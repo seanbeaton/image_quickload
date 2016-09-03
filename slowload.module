@@ -1,0 +1,61 @@
+<?php
+
+/**
+ * @file
+ * Contains slowload.module..
+ */
+
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\image\Entity\ImageStyle;
+use Drupal\Core\Url;
+
+/**
+ * Implements hook_help().
+ */
+function slowload_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    // Main module help for the slowload module.
+    case 'help.page.slowload':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('A module to add the data attributes for the slowload library') . '</p>';
+      return $output;
+
+    default:
+  }
+}
+
+function slowload_preprocess_image(&$variables) {
+  $file = file_url_transform_relative($variables['uri']);
+
+  $config = \Drupal::config('slowload.Config');
+  $settings = $config->get('options_fieldset');
+  $levels = $config->get('levels');
+
+  $style_pairs = array();
+
+  for ($i = 0; $i < $levels; $i++) {
+    $style_pairs[$settings[$i]['full']] = $settings[$i]['preload'];
+  }
+
+
+  if (isset($variables['style_name']) && array_key_exists($variables['style_name'], $style_pairs)) {
+    $variables['#attached']['library'][] = "slowload/slowload";
+
+    $preload_style = $style_pairs[$variables['style_name']];
+
+    $variables['attributes']['data-slowload-img-high'] = $variables['uri'];
+
+
+    $imageWithStyle = ImageStyle::load($preload_style);
+
+    $styled_item = $imageWithStyle->buildUrl(_slowload_replace_image_style($file));
+    $variables['attributes']['data-slowload-img-low'] = $styled_item;
+
+    $variables['attributes']['src'] = "$styled_item";
+  }
+}
+
+function _slowload_replace_image_style($url) {
+  return preg_replace('/^\/sites\/[\w]+\/files\/styles\/[\w]+\/[\w]+\/([\/\w\.\_\-]+)\?[\S]+$/i', "$1", $url);
+}

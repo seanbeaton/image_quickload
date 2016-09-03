@@ -1,0 +1,5 @@
+.slowload-loaded.slowload-usetransition {
+    transition: background-image 0.25s ease-in-out;
+    -moz-transition: background-image 0.25s ease-in-out;
+    -webkit-transition: background-image 0.25s ease-in-out;
+}

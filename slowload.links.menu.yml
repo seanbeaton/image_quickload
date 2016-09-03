@@ -1,0 +1,7 @@
+slowload.config_form:
+  title: 'Slowload Configuration'
+  route_name: slowload.config_form
+  description: 'Slowload image styles configuration'
+  parent: system.admin_structure
+  weight: 99
+
