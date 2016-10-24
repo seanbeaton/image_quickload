@@ -1,0 +1,27 @@
+{#
+/**
+ * @file
+ * Theme override of an image.
+ *
+ * Available variables:
+ * - attributes: HTML attributes for the img tag.
+ * - style_name: (optional) The name of the image style applied.
+ *
+ * @see template_preprocess_slowload_image()
+ */
+#}
+{%
+set style_used = style_name ? style_name|clean_class
+%}
+
+{{ attach_library('slowload/slowload') }}
+<div class="slowload-image-container slowload-image-container--{{ style_used }}" data-slowload-full-quality="{{ slowload['full_quality'] }}" data-slowload-low-quality="{{ slowload['low_quality'] }}" data-slowload-height="{{ height }}" data-slowload-width="{{ width }}" data-slowload-aspect-ratio="{{ slowload['aspect_ratio'] }}">
+    <div class="slowload-image-filler"></div>
+    <div class="inner-image-container">
+        <div class="slowload-transition-canvas" style="background-image: url({{ slowload['low_quality'] }})">
+        </div>
+    </div>
+    <noscript>
+        <img src="{{ slowload['full_quality'] }}" />
+    </noscript>
+</div>

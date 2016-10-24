@@ -1,5 +1,49 @@
-.slowload-loaded.slowload-usetransition {
+.slowload-transition-canvas {
     transition: background-image 0.25s ease-in-out;
     -moz-transition: background-image 0.25s ease-in-out;
     -webkit-transition: background-image 0.25s ease-in-out;
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    height: 100%;
+    width: 100%;
+    top: 0;
+    left: 0;
+    position: absolute;
+    display: block;
 }
+
+.slowload-image-container {
+    position: relative;
+    margin: 0 auto;
+}
+
+.inner-image-container {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    display: none;
+    top: 0;
+    left: 0;
+}
+
+.inner-image-container-hasJs {
+    display: block;
+}
+
+/*.slowload-loaded {*/
+    /*transform: translateZ(0);*/
+    /*filter: blur(50px);*/
+/*}*/
+/*.slowload-use-image-blur {*/
+    /*animation: sharpen 2.5s both;*/
+/*}*/
+
+/*@keyframes sharpen {*/
+    /*0% {*/
+        /*filter: blur(50px);*/
+    /*}*/
+    /*100% {*/
+        /*filter: blur(0px);*/
+    /*}*/
+/*}*/

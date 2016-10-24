@@ -1,60 +1,47 @@
 (function ($) {
+    $('.inner-image-container').addClass('inner-image-container-hasJs');
+
+    $('.slowload-image-container').each(function() {
+        var $this = $(this);
+        var imageHeight = $this.attr("data-slowload-height");
+        var imageWidth = $this.attr("data-slowload-width");
+        var aspectRatio = $this.attr("data-slowload-aspect-ratio");
+
+        $this.find('.slowload-image-filler').css({
+            'padding-bottom': (aspectRatio * 100) + "%"
+        });
+
+        $this.css({
+            'max-width': imageWidth + 'px',
+            'max-height': imageHeight + 'px'
+        });
+    });
+
     var switchImages = function() {
-        var bgimages = $("[data-slowload-bg-high]");
-        $.each(bgimages, function(i, image) {
-            image = $(image);
+        $('.slowload-image-container').each(function(){
+            var $this = $(this);
+            var imageHeight = $this.attr("data-slowload-height");
+            var imageWidth = $this.attr("data-slowload-width");
+            var aspectRatio = $this.attr("data-slowload-aspect-ratio");
+            var fullQuality = $this.attr("data-slowload-full-quality");
 
-            // show the low quality image by default
-            if (!image.hasClass("slowload-switched")) {
-                image.css('backgroundImage', "url(" + image.attr("data-slowload-bg-low") + ")");
-                setTimeout(function(){
-                    image.addClass("slowload-usetransition");
-                }, 500);
-                image.addClass("slowload-switched");
-            }
-
-            // if the low quality one is visible, load and switch to the high quality one
-            if (isElementInViewport(image, false) && !image.hasClass("slowload-loaded")) {
-                image.addClass("slowload-loaded");
-                var loadImage = new Image();
-                var imageUrl = $(image).attr("data-slowload-bg-high");
-                loadImage.onload = function() {
-                    image.css('backgroundImage', "url(" + imageUrl + ")");
+            if (isElementInViewport($this, true) && !$this.hasClass("slowload-loaded")) {
+                $this.addClass("slowload-loaded");
+                var image = new Image();
+                image.onload = function() {
+                    $this.find('.slowload-transition-canvas').css({
+                        'background-image': 'url(' + fullQuality + ')'
+                    })
                 };
-                loadImage.src = imageUrl;
-            }
-        });
-
-        var images = $("img[data-slowload-img-high]");
-        $.each(images, function(i, image) {
-            image = $(image);
-
-            // show the low quality image by default
-            if (!image.hasClass("slowload-switched") && !imgLoaded(image)) {
-                image.attr("src", image.attr("data-slowload-img-low"));
-                image.addClass("slowload-switched");
+                image.src = fullQuality;
             }
 
-            // if the low quality one is visible, load and switch to the high quality one
-            if (isElementInViewport(image, true) && !image.hasClass("slowload-loaded") && !imgLoaded(image)) {
-                image.addClass("slowload-loaded");
-                var loadImage = new Image();
-                var imageUrl = image.attr("data-slowload-img-high");
-                loadImage.onload = function() {
-                    // using fade because there's no good way to do this with css
-                    image.fadeOut('fast', function () {
-                        image.attr('src', imageUrl);
-                        image.fadeIn('fast');
-                    });
-                };
-                loadImage.src = imageUrl;
-            }
-        });
+        })
     };
 
-    var switchingAllowed = true;
     switchImages();
 
+    var switchingAllowed = true;
     window.onscroll = function() {
         if (switchingAllowed) {
             switchingAllowed = false;

@@ -25,37 +25,82 @@ function slowload_help($route_name, RouteMatchInterface $route_match) {
   }
 }
 
-function slowload_preprocess_image(&$variables) {
-  $file = file_url_transform_relative($variables['uri']);
-
-  $config = \Drupal::config('slowload.Config');
-  $settings = $config->get('options_fieldset');
-  $levels = $config->get('levels');
-
-  $style_pairs = array();
-
-  for ($i = 0; $i < $levels; $i++) {
-    $style_pairs[$settings[$i]['full']] = $settings[$i]['preload'];
+/**
+ * Implements hook_preprocess_image().
+ */
+function slowload_preprocess_slowload_image(&$variables) {
+  $style_pairs = _slowload_get_settings();
+  if (!isset($variables['style_name']) || !array_key_exists($variables['style_name'], $style_pairs)) {
+    return;
   }
 
-
-  if (isset($variables['style_name']) && array_key_exists($variables['style_name'], $style_pairs)) {
-    $variables['#attached']['library'][] = "slowload/slowload";
-
-    $preload_style = $style_pairs[$variables['style_name']];
-
-    $variables['attributes']['data-slowload-img-high'] = $variables['uri'];
+  $file = file_url_transform_relative($variables['uri']);
 
 
-    $imageWithStyle = ImageStyle::load($preload_style);
+  $preload_style = $style_pairs[$variables['style_name']];
+  $styled_item = ImageStyle::load($preload_style)->buildUrl(_slowload_replace_image_style($file));
 
-    $styled_item = $imageWithStyle->buildUrl(_slowload_replace_image_style($file));
-    $variables['attributes']['data-slowload-img-low'] = $styled_item;
+//  $variables['#attached']['library'][] = "slowload/slowload";
+  $variables['slowload'] = array();
 
-    $variables['attributes']['src'] = "$styled_item";
+  $variables['slowload']['full_quality'] = $variables['uri'];
+  $variables['slowload']['low_quality'] = $styled_item;
+  $variables['slowload']['aspect_ratio'] = ($variables['height'] / $variables['width']);
+}
+
+/**
+ * Implements hook_theme_suggestions_HOOK_alter().
+ */
+function slowload_theme_suggestions_image_alter(array &$suggestions, array $variables) {
+  $slowload_styles = _slowload_get_settings();
+  if (isset($variables['style_name']) && array_key_exists($variables['style_name'], $slowload_styles)) {
+    $suggestions[] = 'slowload_image';
   }
 }
 
+
+/**
+ * Implements hook_theme().
+ */
+function slowload_theme() {
+  return [
+    'slowload_image' => [
+      'template' => 'slowload-image',
+      'base hook' => 'image',
+    ],
+  ];
+}
+
+/**
+ * Converts image style urls into the raw image url so it may be styled again.
+ *
+ * @param string $url
+ *   The image style url to be unstylized.
+ *
+ * @return string
+ *   The unstylized image url.
+ */
 function _slowload_replace_image_style($url) {
   return preg_replace('/^\/sites\/[\w]+\/files\/styles\/[\w]+\/[\w]+\/([\/\w\.\_\-]+)\?[\S]+$/i', "$1", $url);
+}
+
+/**
+ * Returns saved image style pairs.
+ *
+ * @return array
+ *   The array of image style pairs stored in the module settings.
+ */
+function _slowload_get_settings() {
+  $config = \Drupal::config('slowload.Config');
+
+  $style_settings = $config->get('options_fieldset');
+  $num_pairs = $config->get('levels');
+
+  $style_pairs = array();
+
+  for ($i = 0; $i < $num_pairs; $i++) {
+    $style_pairs[$style_settings[$i]['full']] = $style_settings[$i]['preload'];
+  }
+
+  return $style_pairs;
 }
