@@ -13,6 +13,11 @@
     display: block;
 }
 
+.slowload-image-container--expand[style] {
+    max-width: none !important;
+    max-height: none !important;
+}
+
 .slowload-image-container {
     position: relative;
     margin: 0 auto;
