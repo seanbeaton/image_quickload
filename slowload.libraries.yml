@@ -10,3 +10,5 @@ slowload:
   css:
     theme:
       libraries/slowload/css/slowload.css: {}
+  dependencies:
+    - core/jquery
