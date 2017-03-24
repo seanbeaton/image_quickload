@@ -45,7 +45,12 @@ function slowload_preprocess_slowload_image(&$variables) {
 
   $variables['slowload']['full_quality'] = $variables['uri'];
   $variables['slowload']['low_quality'] = $styled_item;
-  $variables['slowload']['aspect_ratio'] = ($variables['height'] / $variables['width']);
+  if (!empty($variables['width'])) {
+    $variables['slowload']['aspect_ratio'] = ($variables['height'] / $variables['width']);
+  }
+  else {
+    $variables['slowload']['aspect_ratio'] = 1;
+  }
 }
 
 /**
