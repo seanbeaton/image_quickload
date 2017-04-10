@@ -86,7 +86,7 @@ function slowload_theme() {
  *   The unstylized image url.
  */
 function _slowload_replace_image_style($url) {
-  return preg_replace('/^\/sites\/[\w]+\/files\/styles\/[\w]+\/[\w]+\/([\/\w\.\_\-]+)\?[\S]+$/i', "$1", $url);
+  return preg_replace('/^\/sites\/[\w]+\/files\/styles\/[\w]+\/[\w]+\/([%+\/\w\.\_\-]+)\?[\S]+$/i', "$1", $url);
 }
 
 /**
