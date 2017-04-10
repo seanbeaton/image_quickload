@@ -36,11 +36,9 @@ function slowload_preprocess_slowload_image(&$variables) {
 
   $file = file_url_transform_relative($variables['uri']);
 
-
   $preload_style = $style_pairs[$variables['style_name']];
-  $styled_item = ImageStyle::load($preload_style)->buildUrl(_slowload_replace_image_style($file));
+  $styled_item = ImageStyle::load($preload_style)->buildUrl(_slowload_replace_image_style(urldecode($file)));
 
-//  $variables['#attached']['library'][] = "slowload/slowload";
   $variables['slowload'] = array();
 
   $variables['slowload']['full_quality'] = $variables['uri'];
@@ -86,7 +84,7 @@ function slowload_theme() {
  *   The unstylized image url.
  */
 function _slowload_replace_image_style($url) {
-  return preg_replace('/^\/sites\/[\w]+\/files\/styles\/[\w]+\/[\w]+\/([%+\/\w\.\_\-]+)\?[\S]+$/i', "$1", $url);
+  return preg_replace('/^\/sites\/[\w]+\/files\/styles\/[\w]+\/[\w]+\/([ %+\/\w\.\_\-]+)\?[\S]+$/i', "$1", $url);
 }
 
 /**
