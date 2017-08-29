@@ -4,3 +4,5 @@ It provides a page for configuration of image style pairs. If a "preload" (low q
 
 Full image styles should be the one you'd normally use.
 Preload image styles should be the same aspect ratio as the full image style they correspond to, but much smaller. For example, if a full image style is a scale 650x650px, then the preload could be scale 8x8px. If the full image style were scale and crop 1920x1080, then the preload could be 16x9px.
+
+The drupal 7 version is currently only a field formatter.
