@@ -1,109 +1,153 @@
 <?php
 
 /**
- * @file
- * Contains slowload.module..
- */
-
-use Drupal\Core\Routing\RouteMatchInterface;
-use Drupal\image\Entity\ImageStyle;
-use Drupal\Core\Url;
-
-/**
- * Implements hook_help().
- */
-function slowload_help($route_name, RouteMatchInterface $route_match) {
-  switch ($route_name) {
-    // Main module help for the slowload module.
-    case 'help.page.slowload':
-      $output = '';
-      $output .= '<h3>' . t('About') . '</h3>';
-      $output .= '<p>' . t('A module to add the data attributes for the slowload library') . '</p>';
-      return $output;
-
-    default:
-  }
-}
-
-/**
- * Implements hook_preprocess_image().
- */
-function slowload_preprocess_slowload_image(&$variables) {
-  $style_pairs = _slowload_get_settings();
-  if (!isset($variables['style_name']) || !array_key_exists($variables['style_name'], $style_pairs)) {
-    return;
-  }
-
-  $file = file_url_transform_relative($variables['uri']);
-
-  $preload_style = $style_pairs[$variables['style_name']];
-  $styled_item = ImageStyle::load($preload_style)->buildUrl(_slowload_replace_image_style(urldecode($file)));
-
-  $variables['slowload'] = array();
-
-  $variables['slowload']['full_quality'] = $variables['uri'];
-  $variables['slowload']['low_quality'] = $styled_item;
-  if (!empty($variables['width'])) {
-    $variables['slowload']['aspect_ratio'] = ($variables['height'] / $variables['width']);
-  }
-  else {
-    $variables['slowload']['aspect_ratio'] = 1;
-  }
-}
-
-/**
- * Implements hook_theme_suggestions_HOOK_alter().
- */
-function slowload_theme_suggestions_image_alter(array &$suggestions, array $variables) {
-  $slowload_styles = _slowload_get_settings();
-  if (isset($variables['style_name']) && array_key_exists($variables['style_name'], $slowload_styles)) {
-    $suggestions[] = 'slowload_image';
-  }
-}
-
-
-/**
  * Implements hook_theme().
  */
 function slowload_theme() {
-  return [
-    'slowload_image' => [
-      'template' => 'slowload-image',
-      'base hook' => 'image',
-    ],
-  ];
+  return array(
+    'slowload_image_formatter' => array(
+      'variables' => array(
+        'item' => NULL,
+        'entity_type' => NULL,
+        'entity' => NULL,
+        'node' => NULL,  // Left for legacy support.
+        'field' => array(),
+        'display_settings' => array(),
+        'delta' => null,
+      ),
+      'file' => 'slowload.theme.inc',
+    ),
+  );
 }
 
 /**
- * Converts image style urls into the raw image url so it may be styled again.
- *
- * @param string $url
- *   The image style url to be unstylized.
- *
- * @return string
- *   The unstylized image url.
+ * Implements hook_field_formatter_info().
  */
-function _slowload_replace_image_style($url) {
-  return preg_replace('/^\/sites\/[\w]+\/files\/styles\/[\w]+\/[\w]+\/([^?]+)\?[\S]+$/i', "$1", $url);
+function slowload_field_formatter_info() {
+  return array(
+    'slowload' => array(
+      'label' => t('Slowload'),
+      'field types' => array('image'),
+      'settings' => array(
+        'slowload_low_quality' => '',
+        'slowload_high_quality' => '',
+      ),
+    ),
+  );
+}
+
+
+/**
+ * Implements hook_menu().
+ */
+function slowload_menu() {
+  $items = array();
+
+  $items['admin/config/media/slowload'] = array(
+    'title' => 'Slowload',
+    'description' => 'Adjust Slowload settings.',
+    'file' => 'slowload.admin.inc',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('slowload_admin_settings'),
+    'access arguments' => array('administer site configuration'),
+  );
+
+  return $items;
 }
 
 /**
- * Returns saved image style pairs.
- *
- * @return array
- *   The array of image style pairs stored in the module settings.
+ * Implements hook_field_formatter_settings_form().
  */
-function _slowload_get_settings() {
-  $config = \Drupal::config('slowload.Config');
+function slowload_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
 
-  $style_settings = $config->get('options_fieldset');
-  $num_pairs = $config->get('levels');
+  $image_styles = image_style_options(FALSE);
+  $element['slowload_low_quality'] = array(
+    '#title' => t('Low quality image style'),
+    '#type' => 'select',
+    '#required' => TRUE,
+    '#default_value' => $settings['slowload_low_quality'],
+    '#options' => $image_styles,
+    '#description' => t('The low quality image style to load first.'),
+  );
+  $element['slowload_high_quality'] = array(
+    '#title' => t('High quality image style'),
+    '#type' => 'select',
+    '#required' => TRUE,
+    '#default_value' => $settings['slowload_high_quality'],
+    '#options' => $image_styles,
+    '#description' => t('The high quality image style that will replace the low quality version.'),
+  );
 
-  $style_pairs = array();
+  return $element;
+}
 
-  for ($i = 0; $i < $num_pairs; $i++) {
-    $style_pairs[$style_settings[$i]['full']] = $style_settings[$i]['preload'];
+/**
+ * Implements hook_library().
+ */
+function slowload_library() {
+  $libraries['slowload'] = array(
+    "title" => "Slowload",
+    "js" => array(
+      drupal_get_path("module", "slowload") . "/libraries/slowload/js/slowload.js" => array(),
+    ),
+    "css" => array(
+      drupal_get_path("module", "slowload") . "/libraries/slowload/css/slowload.css" => array(),
+    ),
+  );
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function slowload_views_api() {
+  return array(
+    'api' => 2,
+    'path' => drupal_get_path('module', 'slowload') . '/views',
+  );
+}
+
+/**
+ * Implements hook_field_formatter_settings_summary().
+ */
+function slowload_field_formatter_settings_summary($field, $instance, $view_mode) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+
+  $summary = array();
+
+  $image_styles = image_style_options(FALSE);
+  unset($image_styles['']);
+
+  if (isset($image_styles[$settings['slowload_high_quality']])) {
+    $summary[] = t('High quality style: @style', array('@style' => $image_styles[$settings['slowload_high_quality']]));
   }
 
-  return $style_pairs;
+  if (isset($image_styles[$settings['slowload_low_quality']])) {
+    $summary[] = t('High quality style: @style', array('@style' => $image_styles[$settings['slowload_low_quality']]));
+  }
+
+  return implode('<br />', $summary);
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function slowload_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+  foreach ($items as $delta => $item) {
+    $element[$delta] = array(
+      '#theme' => 'slowload_image_formatter',
+      '#item' => $item,
+      '#entity_type' => $entity_type,
+      '#entity' => $entity,
+      '#node' => $entity, // Left for legacy support.
+      '#field' => $field,
+      '#display_settings' => $display['settings'],
+      '#delta' => $delta,
+    );
+  }
+
+  return $element;
 }
