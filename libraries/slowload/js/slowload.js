@@ -17,17 +17,21 @@
         });
     });
 
-    var switchImages = function() {
-        $('.slowload-image-container').each(function(){
+    var switchImages = function(switch_type) {
+        if (typeof switch_type === "undefined") { switch_type = "default" }
+        var switch_class;
+        if (switch_type === "auto") {
+            switch_class = ".slowload-image-container--auto"
+        } else {
+            switch_class = ".slowload-image-container:not(.slowload-image-container--auto)"
+        }
+        $(switch_class).each(function() {
             var $this = $(this);
-            var imageHeight = $this.attr("data-slowload-height");
-            var imageWidth = $this.attr("data-slowload-width");
-            var aspectRatio = $this.attr("data-slowload-aspect-ratio");
             var fullQuality = $this.attr("data-slowload-full-quality");
-
-            if (isElementInViewport($this, true) && !$this.hasClass("slowload-loaded")) {
+            if (!$this.hasClass("slowload-loaded") && isElementInViewport($this, true)) {
                 $this.addClass("slowload-loaded");
                 var image = new Image();
+                console.log("loading image!", fullQuality);
                 image.onload = function() {
                     $this.find('.slowload-transition-canvas').css({
                         'background-image': 'url(' + fullQuality + ')'
@@ -50,13 +54,16 @@
         }
     };
 
+    setInterval(function() {
+        switchImages("auto");
+    }, 500);
+
     function isElementInViewport(el, strict) {
         //special bonus for those using jQuery
         if (typeof jQuery === "function" && el instanceof jQuery) {
             el = el[0];
         }
         var rect = el.getBoundingClientRect();
-
         return (
             (
                 rect.top <= (window.innerHeight || document.documentElement.clientHeight) &&
@@ -72,10 +79,6 @@
                 (!strict)
             )
         );
-    }
-
-    function imgLoaded(imgElement) {
-        return imgElement.complete && imgElement.naturalHeight != 0;
     }
 
 })(jQuery);

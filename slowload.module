@@ -10,10 +10,10 @@ function slowload_theme() {
         'item' => NULL,
         'entity_type' => NULL,
         'entity' => NULL,
-        'node' => NULL,  // Left for legacy support.
+        'node' => NULL,
         'field' => array(),
         'display_settings' => array(),
-        'delta' => null,
+        'delta' => NULL,
       ),
       'file' => 'slowload.theme.inc',
     ),
@@ -31,28 +31,10 @@ function slowload_field_formatter_info() {
       'settings' => array(
         'slowload_low_quality' => '',
         'slowload_high_quality' => '',
+        'slowload_auto_swap' => '',
       ),
     ),
   );
-}
-
-
-/**
- * Implements hook_menu().
- */
-function slowload_menu() {
-  $items = array();
-
-  $items['admin/config/media/slowload'] = array(
-    'title' => 'Slowload',
-    'description' => 'Adjust Slowload settings.',
-    'file' => 'slowload.admin.inc',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('slowload_admin_settings'),
-    'access arguments' => array('administer site configuration'),
-  );
-
-  return $items;
 }
 
 /**
@@ -79,6 +61,12 @@ function slowload_field_formatter_settings_form($field, $instance, $view_mode, $
     '#options' => $image_styles,
     '#description' => t('The high quality image style that will replace the low quality version.'),
   );
+  $element['slowload_auto_swap'] = array(
+    '#title' => t('Automatically swap images'),
+    '#type' => 'checkbox',
+    '#default_value' => $settings['slowload_auto_swap'],
+    '#description' => t('Normally, the slowload js will only swap images as the user scrolls down the page. With this enabled, it will automatically check if the image has entered the viewport, then swap it out. This is useful for slideshows.'),
+  );
 
   return $element;
 }
@@ -88,23 +76,13 @@ function slowload_field_formatter_settings_form($field, $instance, $view_mode, $
  */
 function slowload_library() {
   $libraries['slowload'] = array(
-    "title" => "Slowload",
-    "js" => array(
-      drupal_get_path("module", "slowload") . "/libraries/slowload/js/slowload.js" => array(),
+    'title' => 'Slowload',
+    'js' => array(
+      drupal_get_path('module', 'slowload') . '/libraries/slowload/js/slowload.js' => array(),
     ),
-    "css" => array(
-      drupal_get_path("module", "slowload") . "/libraries/slowload/css/slowload.css" => array(),
+    'css' => array(
+      drupal_get_path('module', 'slowload') . '/libraries/slowload/css/slowload.css' => array(),
     ),
-  );
-}
-
-/**
- * Implements hook_views_api().
- */
-function slowload_views_api() {
-  return array(
-    'api' => 2,
-    'path' => drupal_get_path('module', 'slowload') . '/views',
   );
 }
 
@@ -121,11 +99,25 @@ function slowload_field_formatter_settings_summary($field, $instance, $view_mode
   unset($image_styles['']);
 
   if (isset($image_styles[$settings['slowload_high_quality']])) {
-    $summary[] = t('High quality style: @style', array('@style' => $image_styles[$settings['slowload_high_quality']]));
+    $summary[] = t('High quality style: @style', ['@style' => $image_styles[$settings['slowload_high_quality']]]);
+  }
+  else {
+    $summary[] = t('High quality style: Original image');
   }
 
   if (isset($image_styles[$settings['slowload_low_quality']])) {
-    $summary[] = t('High quality style: @style', array('@style' => $image_styles[$settings['slowload_low_quality']]));
+    $summary[] = t('Low quality style: @style', ['@style' => $image_styles[$settings['slowload_low_quality']]]);
+  }
+  else {
+    $summary[] = t('Low quality style: Original image');
+  }
+
+
+  if (isset($image_styles[$settings['slowload_auto_swap']])) {
+    $summary[] = t('Automatically swap images: @swap', ['@swap' => $image_styles[$settings['slowload_auto_swap']] ? 'Yes' : 'No']);
+  }
+  else {
+    $summary[] = t('Automatically swap images: No');
   }
 
   return implode('<br />', $summary);
@@ -142,7 +134,7 @@ function slowload_field_formatter_view($entity_type, $entity, $field, $instance,
       '#item' => $item,
       '#entity_type' => $entity_type,
       '#entity' => $entity,
-      '#node' => $entity, // Left for legacy support.
+      '#node' => $entity,
       '#field' => $field,
       '#display_settings' => $display['settings'],
       '#delta' => $delta,
