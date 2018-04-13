@@ -10,7 +10,7 @@
  *
  * @ingroup views_field_handlers
  */
-class slowload_handler_field_slowload extends views_handler_field {
+class image_quickload_handler_field_image_quickload extends views_handler_field {
   function query() {
     // Do nothing, as this handler does not need to do anything to the query itself.
   }
@@ -57,28 +57,28 @@ class slowload_handler_field_slowload extends views_handler_field {
    * Render the trigger field and its linked popup information.
    */
   function render($values) {
-    drupal_add_library("slowload", "slowload");
+    drupal_add_library("image_quickload", "image_quickload");
     ddl($values, 'values');
     // Get image styles needed.
 
 //    $image['path'] = file_create_url($image['uri']);
-//    $slowload_width = $image['width'];
-//    $slowload_height = $image['height'];
-//    $slowload_ar = $slowload_height / $slowload_width;
+//    $image_quickload_width = $image['width'];
+//    $image_quickload_height = $image['height'];
+//    $image_quickload_ar = $image_quickload_height / $image_quickload_width;
 //    $full_quality = $image['path'];
     $low_quality = image_style_url($this->options['low_quality'], $image_path);
-//    $slowload_markup = <<<EOT
-//    <div class="slowload-image-container slowload-image-container--expand slowload-image-container--front-page-slider" data-slowload-full-quality="$full_quality" data-slowload-low-quality="$low_quality" data-slowload-height="$slowload_height" data-slowload-width="$slowload_width" data-slowload-aspect-ratio="$slowload_ar">
-//      <div class="slowload-image-filler"></div>
+//    $image_quickload_markup = <<<EOT
+//    <div class="image_quickload-image-container image_quickload-image-container--expand image_quickload-image-container--front-page-slider" data-image_quickload-full-quality="$full_quality" data-image_quickload-low-quality="$low_quality" data-image_quickload-height="$image_quickload_height" data-image_quickload-width="$image_quickload_width" data-image_quickload-aspect-ratio="$image_quickload_ar">
+//      <div class="image_quickload-image-filler"></div>
 //      <div class="inner-image-container">
-//        <div class="slowload-transition-canvas" style="background-image: url($low_quality)">
+//        <div class="image_quickload-transition-canvas" style="background-image: url($low_quality)">
 //        </div>
 //      </div>
 //    </div>
 //EOT;
 //
-    $slowload_markup = "RENDER IN THE VIEW";
+    $image_quickload_markup = "RENDER IN THE VIEW";
 
-    return $slowload_markup;
+    return $image_quickload_markup;
   }
 }

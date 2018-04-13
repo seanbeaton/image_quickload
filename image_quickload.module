@@ -1,0 +1,145 @@
+<?php
+
+/**
+ * Implements hook_theme().
+ */
+function image_quickload_theme() {
+  return array(
+    'image_quickload_image_formatter' => array(
+      'variables' => array(
+        'item' => NULL,
+        'entity_type' => NULL,
+        'entity' => NULL,
+        'node' => NULL,
+        'field' => array(),
+        'display_settings' => array(),
+        'delta' => NULL,
+      ),
+      'file' => 'image_quickload.theme.inc',
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function image_quickload_field_formatter_info() {
+  return array(
+    'image_quickload' => array(
+      'label' => t('image_quickload'),
+      'field types' => array('image'),
+      'settings' => array(
+        'image_quickload_low_quality' => '',
+        'image_quickload_high_quality' => '',
+        'image_quickload_auto_swap' => '',
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_formatter_settings_form().
+ */
+function image_quickload_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+
+  $image_styles = image_style_options(FALSE);
+  $element['image_quickload_low_quality'] = array(
+    '#title' => t('Low quality image style'),
+    '#type' => 'select',
+    '#required' => TRUE,
+    '#default_value' => $settings['image_quickload_low_quality'],
+    '#options' => $image_styles,
+    '#description' => t('The low quality image style to load first.'),
+  );
+  $element['image_quickload_high_quality'] = array(
+    '#title' => t('High quality image style'),
+    '#type' => 'select',
+    '#required' => TRUE,
+    '#default_value' => $settings['image_quickload_high_quality'],
+    '#options' => $image_styles,
+    '#description' => t('The high quality image style that will replace the low quality version.'),
+  );
+  $element['image_quickload_auto_swap'] = array(
+    '#title' => t('Automatically swap images'),
+    '#type' => 'checkbox',
+    '#default_value' => $settings['image_quickload_auto_swap'],
+    '#description' => t('Normally, the image_quickload js will only swap images as the user scrolls down the page. With this enabled, it will automatically check if the image has entered the viewport, then swap it out. This is useful for slideshows.'),
+  );
+
+  return $element;
+}
+
+/**
+ * Implements hook_library().
+ */
+function image_quickload_library() {
+  $libraries['image_quickload'] = array(
+    'title' => 'image_quickload',
+    'js' => array(
+      drupal_get_path('module', 'image_quickload') . '/libraries/image_quickload/js/image_quickload.js' => array(),
+    ),
+    'css' => array(
+      drupal_get_path('module', 'image_quickload') . '/libraries/image_quickload/css/image_quickload.css' => array(),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_formatter_settings_summary().
+ */
+function image_quickload_field_formatter_settings_summary($field, $instance, $view_mode) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+
+  $summary = array();
+
+  $image_styles = image_style_options(FALSE);
+  unset($image_styles['']);
+
+  if (isset($image_styles[$settings['image_quickload_high_quality']])) {
+    $summary[] = t('High quality style: @style', ['@style' => $image_styles[$settings['image_quickload_high_quality']]]);
+  }
+  else {
+    $summary[] = t('High quality style: Original image');
+  }
+
+  if (isset($image_styles[$settings['image_quickload_low_quality']])) {
+    $summary[] = t('Low quality style: @style', ['@style' => $image_styles[$settings['image_quickload_low_quality']]]);
+  }
+  else {
+    $summary[] = t('Low quality style: Original image');
+  }
+
+
+  if (isset($image_styles[$settings['image_quickload_auto_swap']])) {
+    $summary[] = t('Automatically swap images: @swap', ['@swap' => $image_styles[$settings['image_quickload_auto_swap']] ? 'Yes' : 'No']);
+  }
+  else {
+    $summary[] = t('Automatically swap images: No');
+  }
+
+  return implode('<br />', $summary);
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function image_quickload_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+  foreach ($items as $delta => $item) {
+    $element[$delta] = array(
+      '#theme' => 'image_quickload_image_formatter',
+      '#item' => $item,
+      '#entity_type' => $entity_type,
+      '#entity' => $entity,
+      '#node' => $entity,
+      '#field' => $field,
+      '#display_settings' => $display['settings'],
+      '#delta' => $delta,
+    );
+  }
+
+  return $element;
+}

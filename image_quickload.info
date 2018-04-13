@@ -1,0 +1,6 @@
+name = Image quickload
+description = Provides field formatters for the image_quickload js utility.
+core = 7.x
+configure = admin/config/media/image_quickload
+
+files[] = views/image_quickload_handler_field_image_quickload.inc

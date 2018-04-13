@@ -1,6 +1,0 @@
-name = Slowload
-description = Provides field formatters for the slowload js utility.
-core = 7.x
-configure = admin/config/media/slowload
-
-files[] = views/slowload_handler_field_slowload.inc
