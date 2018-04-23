@@ -1,0 +1,17 @@
+{
+  "name": "drupal/image_quickload",
+  "description": "Image Quickload is a image slow/lazy loading sandbox module, with a low quality prerender for better UX.",
+  "type": "drupal-module",
+  "homepage": "https://github.com/seanbeaton/image_quickload",
+  "authors": [
+    {
+      "name": "Sean Beaton",
+      "homepage": "https://seanbeaton.com"
+    }
+  ],
+  "support": {
+    "issues": "https://github.com/seanbeaton/image_quickload/issues"
+  },
+  "license": "GPL-2.0",
+  "require": { }
+}
