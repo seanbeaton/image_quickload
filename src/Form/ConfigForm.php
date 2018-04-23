@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\slowload\Form;
+namespace Drupal\image_quickload\Form;
 
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormState;
@@ -11,7 +11,7 @@ use Drupal\Component\Utility\NestedArray;
 /**
  * Class ConfigForm.
  *
- * @package Drupal\slowload\Form
+ * @package Drupal\image_quickload\Form
  */
 class ConfigForm extends ConfigFormBase {
 
@@ -20,7 +20,7 @@ class ConfigForm extends ConfigFormBase {
    */
   protected function getEditableConfigNames() {
     return [
-      'slowload.Config',
+      'image_quickload.Config',
     ];
   }
 
@@ -36,32 +36,41 @@ class ConfigForm extends ConfigFormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
 
-    $available_styles_values = array_keys(ImageStyle::loadMultiple());
-    $available_styles = array_combine($available_styles_values, $available_styles_values);
+    $all_styles = ImageStyle::loadMultiple();
+    $available_styles = [
+      '' => 'None - Original Image',
+    ];
+    foreach ($all_styles as $style_name => $style) {
+      $available_styles[$style_name] = $style->get('label');
+    }
+
+    $preload_available_styles = $available_styles;
+    $preload_available_styles['image_quickload_pixel'] = 'Quickload pixel image - Fastest';
+
     $form['#tree'] = TRUE;
 
-    $form['#attached']['library'][] = 'slowload/drupal.slowload.admin';
+    $form['#attached']['library'][] = 'image_quickload/drupal.image_quickload.admin';
     $values = &$form_state->getValues();
     $storage = &$form_state->getStorage();
 
-    $config = $this->config('slowload.Config')->get('options_fieldset');
-    $levels = $this->config('slowload.Config')->get('levels');
+    $config = $this->config('image_quickload.Config')->get('options_fieldset');
+    $levels = $this->config('image_quickload.Config')->get('levels');
 
     if ($form_state->hasTemporaryValue('options')) {
       $last_options = $form_state->getTemporaryValue('options');
     }
 
-    if (!isset($storage['slowload']) ) {
+    if (!isset($storage['image_quickload']) ) {
       if (isset($levels)) {
-        $storage['slowload']['num_options'] = $levels;
+        $storage['image_quickload']['num_options'] = $levels;
       } else {
-        $storage['slowload']['num_options'] = 1;
+        $storage['image_quickload']['num_options'] = 1;
       }
     }
 
     $form_state->setStorage($storage);
 
-    $num_options = &$storage['slowload']['num_options'];
+    $num_options = &$storage['image_quickload']['num_options'];
 
     $form['options_fieldset'] = [
       '#type' => 'fieldset',
@@ -82,10 +91,14 @@ class ConfigForm extends ConfigFormBase {
       $full_item_value = 'placeholder';
       $preload_key_placeholder = 'placeholder';
       $preload_item_value = 'placeholder';
+      $autoswap_key_placeholder = 'placeholder';
+      $autoswap_item_value = 'placeholder';
 
       if (isset($last_options[$i]['full'])) {
         $full_key_placeholder = 'value';
         $full_item_value = $last_options[$i]['full'];
+        $autoswap_key_placeholder = 'value';
+        $autoswap_item_value = $last_options[$i]['auto_swap'];
 //        error_log("level $i set full to " . $last_options[$i]['full']);
 //        $message = "level $i set full to " . $last_options[$i]['full'];
       }
@@ -107,10 +120,51 @@ class ConfigForm extends ConfigFormBase {
 
       $form['options_fieldset'][$i]['preload'] = array(
         '#type' => 'select',
-        '#options' => $available_styles,
+        '#options' => $preload_available_styles,
         '#title' => 'Preload version',
         '#default_value' =>  (isset($config[$i]['preload']) ? $config[$i]['preload'] : ""),
         "#$preload_key_placeholder" => $preload_item_value,
+//        '#ajax' => $image_style_ajax,
+      );
+
+
+      $form['options_fieldset'][$i]['auto_swap'] = array(
+        '#title' => t('Automatically swap images'),
+        '#type' => 'checkbox',
+        '#default_value' =>  (isset($config[$i]['auto_swap']) ? $config[$i]['auto_swap'] : ""),
+        '#description' => t('Normally, the image_quickload js will only swap images as the user scrolls down the page. With this enabled, it will automatically check if the image has entered the viewport, then swap it out. This is useful for slideshows.'),
+//        "#$autoswap_key_placeholder" => $autoswap_item_value,
+//        '#ajax' => $image_style_ajax,
+      );
+      $form['options_fieldset'][$i]['expand_image'] = array(
+        '#title' => t('Expand images'),
+        '#type' => 'checkbox',
+        '#default_value' =>  (isset($config[$i]['expand_image']) ? $config[$i]['expand_image'] : ""),
+        '#description' => t('Expand images to the size of their containers automatically.'),
+//        "#$autoswap_key_placeholder" => $autoswap_item_value,
+//        '#ajax' => $image_style_ajax,
+      );
+
+      $form['options_fieldset'][$i]['skip_visibility_check'] = array(
+        '#title' => t('Skip visibility check'),
+        '#type' => 'checkbox',
+        '#default_value' =>  (isset($config[$i]['skip_visibility_check']) ? $config[$i]['skip_visibility_check'] : ""),
+        '#description' => t('Normally the image quickload js checks to make sure that the image is visible (not display: none;) in addition to checking if it\'s in the viewport. Use this option to disable this check.'),
+//        "#$autoswap_key_placeholder" => $autoswap_item_value,
+//        '#ajax' => $image_style_ajax,
+      );
+
+
+      $form['options_fieldset'][$i]['use_offset'] = array(
+        '#type' => 'select',
+        '#options' => array(
+          '' => "Off",
+          '250' => "250px offset",
+          '500' => "500px offset",
+          '1000' => "1000px offset",
+        ),
+        '#title' => 'Preload version',
+        '#default_value' =>  (isset($config[$i]['use_offset']) ? $config[$i]['use_offset'] : ""),
 //        '#ajax' => $image_style_ajax,
       );
 
@@ -121,10 +175,10 @@ class ConfigForm extends ConfigFormBase {
           '#value' => t("Remove style pair $item"), // if you don't make the value unique, getTriggeringElement will always take the last one with that name.
           '#limitValidationErrors' => array(),
           '#remove_level' => $i,
-          '#submit' => array('::slowload_add_more_remove_specific'),
+          '#submit' => array('::image_quickload_add_more_remove_specific'),
           '#validate' => array(),
           '#ajax' => array(
-            'callback' => "::slowload_add_more_callback",
+            'callback' => "::image_quickload_add_more_callback",
             'wrapper' => 'all-styles-wrapper',
           ),
         );
@@ -135,10 +189,10 @@ class ConfigForm extends ConfigFormBase {
       '#type' => 'submit',
       '#value' => t('Add another pair'),
       '#limitValidationErrors' => array(),
-      '#submit' => array('::slowload_add_more_add_one'),
+      '#submit' => array('::image_quickload_add_more_add_one'),
       '#validate' => array(),
       '#ajax' => array(
-        'callback' => "::slowload_add_more_callback",
+        'callback' => "::image_quickload_add_more_callback",
         'wrapper' => 'all-styles-wrapper',
       ),
     );
@@ -148,10 +202,10 @@ class ConfigForm extends ConfigFormBase {
 //        '#type' => 'submit',
 //        '#value' => t('Remove a pair'),
 //        '#limitValidationErrors' => array(),
-//        '#submit' => array(array($this, 'slowload_add_more_remove_one')),
+//        '#submit' => array(array($this, 'image_quickload_add_more_remove_one')),
 //        '#validate' => array(),
 //        '#ajax' => array(
-//          'callback' => "::slowload_add_more_callback",
+//          'callback' => "::image_quickload_add_more_callback",
 //          'wrapper' => 'all-styles-wrapper',
 //        ),
 //      );
@@ -181,7 +235,7 @@ class ConfigForm extends ConfigFormBase {
    * @param \Drupal\Core\Form\FormStateInterface $form_state
    * @return mixed
    */
-  public function slowload_add_more_callback(array &$form, FormStateInterface $form_state) {
+  public function image_quickload_add_more_callback(array &$form, FormStateInterface $form_state) {
     return $form['options_fieldset'];
   }
 
@@ -189,9 +243,9 @@ class ConfigForm extends ConfigFormBase {
    * @param array $form
    * @param \Drupal\Core\Form\FormStateInterface $form_state
    */
-  public function slowload_add_more_add_one(array &$form, FormStateInterface $form_state) {
+  public function image_quickload_add_more_add_one(array &$form, FormStateInterface $form_state) {
     $storage = &$form_state->getStorage();
-    $storage['slowload']['num_options']++;
+    $storage['image_quickload']['num_options']++;
 
     $form_state->setStorage($storage);
 
@@ -202,10 +256,10 @@ class ConfigForm extends ConfigFormBase {
    * @param array $form
    * @param \Drupal\Core\Form\FormStateInterface $form_state
    */
-  public function slowload_add_more_remove_one(array &$form, FormStateInterface $form_state) {
+  public function image_quickload_add_more_remove_one(array &$form, FormStateInterface $form_state) {
     $storage = &$form_state->getStorage();
-    if ($storage['slowload']['num_options'] > 1) {
-      $storage['slowload']['num_options']--;
+    if ($storage['image_quickload']['num_options'] > 1) {
+      $storage['image_quickload']['num_options']--;
     }
     $form_state->setStorage($storage);
 
@@ -216,12 +270,12 @@ class ConfigForm extends ConfigFormBase {
    * @param array $form
    * @param \Drupal\Core\Form\FormStateInterface $form_state
    */
-  public function slowload_add_more_remove_specific(array &$form, FormStateInterface $form_state) {
+  public function image_quickload_add_more_remove_specific(array &$form, FormStateInterface $form_state) {
     $button = $form_state->getTriggeringElement();
     $all_values = $form_state->getValues();
     $values = &$all_values['options_fieldset'];
     $storage = &$form_state->getStorage();
-    $num_options = $storage['slowload']['num_options'];
+    $num_options = $storage['image_quickload']['num_options'];
 
     if ($button['#remove_level'] !== null && $num_options > 1) {
 
@@ -240,7 +294,7 @@ class ConfigForm extends ConfigFormBase {
       $form_state->setTemporaryValue('options', $values);
       $form_state->setValues($all_values);
 
-      $storage['slowload']['num_options']--;
+      $storage['image_quickload']['num_options']--;
 
       $form_state->setStorage($storage);
 
@@ -253,7 +307,7 @@ class ConfigForm extends ConfigFormBase {
    * @param $image_style_input
    * @return bool
    */
-  public function slowload_validate_image_style($image_style_input) {
+  public function image_quickload_validate_image_style($image_style_input) {
     $styles = ImageStyle::loadMultiple();
     return array_key_exists($image_style_input, $styles);
   }
@@ -263,21 +317,21 @@ class ConfigForm extends ConfigFormBase {
    * @param \Drupal\Core\Form\FormStateInterface $form_state
    * @return bool
    */
-  public function slowload_validation(array &$form, FormStateInterface $form_state) {
+  public function image_quickload_validation(array &$form, FormStateInterface $form_state) {
     $storage = &$form_state->getStorage();
-    $levels = $storage['slowload']['num_options'];
+    $levels = $storage['image_quickload']['num_options'];
     $pass = TRUE;
 
     for ($i = 0; $i < $levels; $i++) {
       $full_item = $form_state->getValue(['options_fieldset', $i, 'full']);
       $preload_item = $form_state->getValue(['options_fieldset', $i, 'preload']);
 
-      if (!$this->slowload_validate_image_style($full_item) && !$full_item == '') {
+      if (!$this->image_quickload_validate_image_style($full_item) && !$full_item == '' && !$full_item == 'image_quickload_pixel') {
         $form_state->setErrorByName("options_fieldset][$i][full", $this->t('This is not an image style.'));
         $pass = FALSE;
       }
 
-      if (!$this->slowload_validate_image_style($preload_item) && !$preload_item == '') {
+      if (!$this->image_quickload_validate_image_style($preload_item) && !$preload_item == '' && !$preload_item == 'image_quickload_pixel') {
         $form_state->setErrorByName("options_fieldset][$i][preload", $this->t('This is not an image style.'));
         $pass = FALSE;
       }
@@ -289,7 +343,7 @@ class ConfigForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
-    return $this->slowload_validation($form, $form_state);
+    return $this->image_quickload_validation($form, $form_state);
   }
 
   /**
@@ -298,9 +352,9 @@ class ConfigForm extends ConfigFormBase {
   public function submitForm(array &$form, FormStateInterface $form_state) {
     parent::submitForm($form, $form_state);
 
-    $this->config('slowload.Config')
+    $this->config('image_quickload.Config')
       ->set('options_fieldset', $form_state->getValue('options_fieldset'))
-      ->set('levels', $form_state->getStorage()['slowload']['num_options'])
+      ->set('levels', $form_state->getStorage()['image_quickload']['num_options'])
       ->save();
   }
 

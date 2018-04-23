@@ -1,0 +1,7 @@
+image_quickload.config_form:
+  title: 'Image Quickload'
+  route_name: image_quickload.config_form
+  description: 'Image Quickload image styles configuration'
+  parent: system.admin_config_media
+  weight: 99
+

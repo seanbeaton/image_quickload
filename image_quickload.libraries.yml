@@ -1,0 +1,20 @@
+drupal.image_quickload.admin:
+  version: VERSION
+  css:
+    theme:
+      css/image_quickload.admin.css: {}
+image_quickload:
+  version: VERSION
+  js:
+    libraries/image_quickload/js/image_quickload.js: {}
+  css:
+    theme:
+      libraries/image_quickload/css/image_quickload.css: {}
+  dependencies:
+    - core/jquery
+image_quickload_init:
+  version: VERSION
+  js:
+    js/iq_init.js: {}
+  dependencies:
+    - core/jquery

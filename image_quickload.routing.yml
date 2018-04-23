@@ -1,0 +1,11 @@
+
+image_quickload.config_form:
+  path: '/admin/config/media/image_quickload/config'
+  defaults:
+    _form: '\Drupal\image_quickload\Form\ConfigForm'
+    _title: 'image_quickload Configuration'
+  requirements:
+    _permission: 'access administration pages'
+  options:
+    _admin_route: TRUE
+

@@ -1,0 +1,28 @@
+{#
+/**
+ * @file
+ * Theme override of an image.
+ *
+ * Available variables:
+ * - attributes: HTML attributes for the img tag.
+ * - style_name: (optional) The name of the image style applied.
+ *
+ * @see template_preprocess_image_quickload_image()
+ */
+#}
+{%
+set style_used = style_name ? style_name|clean_class
+%}
+
+{{ attach_library('image_quickload/image_quickload') }}
+{{ attach_library('image_quickload/image_quickload_init') }}
+<div class="image-quickload-image-container image-quickload-image-container--{{ style_used }} {{ image_quickload['extra_image_container_classes'] }}" {{ image_quickload['extra_data_attributes'] }} data-image-quickload-full-quality="{{ image_quickload['full_quality'] }}" data-image-quickload-low-quality="{{ image_quickload['low_quality'] }}" data-image-quickload-height="{{ height }}" data-image-quickload-width="{{ width }}" data-image-quickload-aspect-ratio="{{ image_quickload['aspect_ratio'] }}" aria-label="{{ image_quickload['aria_label'] }}">
+    <div class="image-quickload-image-filler"></div>
+    <div class="inner-image-container">
+        <div class="image-quickload-transition-canvas" style="background-image: url({{ image_quickload['low_quality'] }})">
+        </div>
+    </div>
+    <noscript>
+        <img src="{{ image_quickload['full_quality'] }}" />
+    </noscript>
+</div>

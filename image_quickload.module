@@ -1,0 +1,140 @@
+<?php
+
+/**
+ * @file
+ * Contains image_quickload.module..
+ */
+
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\image\Entity\ImageStyle;
+use Drupal\Core\Url;
+
+/**
+ * Implements hook_help().
+ */
+function image_quickload_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    // Main module help for the image_quickload module.
+    case 'help.page.image_quickload':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('A module to add the data attributes for the Image Quickload library') . '</p>';
+      return $output;
+
+    default:
+  }
+}
+
+/**
+ * Implements hook_preprocess_image().
+ */
+function image_quickload_preprocess_image_quickload_image(&$variables) {
+  $settings = _image_quickload_get_settings();
+  if (!isset($variables['style_name']) || !array_key_exists($variables['style_name'], $settings)) {
+    return;
+  }
+
+  $file = file_url_transform_relative($variables['uri']);
+
+  $image_style_settings = $settings[$variables['style_name']];
+
+  if ($image_style_settings['preload'] == 'image_quickload_pixel') {
+    $styled_item = file_create_url(drupal_get_path('module', 'image_quickload') . '/images/quickpixel.png');
+  }
+  else {
+    $styled_item = ImageStyle::load($image_style_settings['preload'])->buildUrl(_image_quickload_replace_image_style(urldecode($file)));
+  }
+
+  $variables['image_quickload'] = array();
+
+  $variables['image_quickload']['full_quality'] = $variables['uri'];
+  $variables['image_quickload']['low_quality'] = $styled_item;
+  if (!empty($variables['width'])) {
+    $variables['image_quickload']['aspect_ratio'] = ($variables['height'] / $variables['width']);
+  }
+  else {
+    $variables['image_quickload']['aspect_ratio'] = 1;
+  }
+
+
+  $variables['image_quickload']['aria_label'] = '';
+  $image = (array) $variables;
+  $image['attributes'] = [];
+  if (!empty($item['alt'])) {
+    $image['alt'] = $item['alt'];
+    $variables['image_quickload']['aria_label'] = check_plain($item['alt']);
+  }
+
+  $variables['image_quickload']['extra_image_container_classes'] = '';
+  $variables['image_quickload']['extra_data_attributes'] = '';
+  if ($image_style_settings['auto_swap']) {
+    $variables['image_quickload']['extra_image_container_classes'] .= ' image-quickload-image-container--auto';
+  }
+  if ($image_style_settings['expand_image']) {
+    $variables['image_quickload']['extra_image_container_classes'] .= ' image-quickload-image-container--expand';
+  }
+  if ($image_style_settings['use_offset']) {
+    $variables['image_quickload']['extra_image_container_classes'] .= ' image-quickload--use-offset';
+    $variables['image_quickload']['extra_data_attributes'] .= " data-image-quickload-load-offset=" . (int) $image_style_settings['use_offset'];
+  }
+  if ($image_style_settings['skip_visibility_check']) {
+    $variables['image_quickload']['extra_image_container_classes'] .= ' image-quickload--skip-visibility-check';
+  }
+}
+
+/**
+ * Implements hook_theme_suggestions_HOOK_alter().
+ */
+function image_quickload_theme_suggestions_image_alter(array &$suggestions, array $variables) {
+  $image_quickload_styles = _image_quickload_get_settings();
+  if (isset($variables['style_name']) && array_key_exists($variables['style_name'], $image_quickload_styles)) {
+    $suggestions[] = 'image_quickload_image';
+  }
+}
+
+
+/**
+ * Implements hook_theme().
+ */
+function image_quickload_theme() {
+  return [
+    'image_quickload_image' => [
+      'template' => 'image_quickload-image',
+      'base hook' => 'image',
+    ],
+  ];
+}
+
+/**
+ * Converts image style urls into the raw image url so it may be styled again.
+ *
+ * @param string $url
+ *   The image style url to be unstylized.
+ *
+ * @return string
+ *   The unstylized image url.
+ */
+function _image_quickload_replace_image_style($url) {
+  return preg_replace('/^\/sites\/[\w]+\/files\/styles\/[\w]+\/[\w]+\/([^?]+)\?[\S]+$/i', "$1", $url);
+}
+
+/**
+ * Returns saved image style pairs.
+ *
+ * @return array
+ *   The array of image style pairs stored in the module settings.
+ */
+function _image_quickload_get_settings() {
+  $config = \Drupal::config('image_quickload.Config');
+
+  $style_settings = $config->get('options_fieldset');
+  $num_pairs = $config->get('levels');
+
+  $settings = [];
+
+  for ($i = 0; $i < $num_pairs; $i++) {
+    $settings[$style_settings[$i]['full']] = $style_settings[$i];
+  }
+
+  return $settings;
+}

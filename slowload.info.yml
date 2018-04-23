@@ -1,5 +1,0 @@
-name: slowload
-type: module
-description: A module to add the data attributes for the slowload library
-core: 8.x
-package: Custom
