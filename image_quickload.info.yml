@@ -1,5 +1,5 @@
 name: image_quickload
 type: module
 description: A module to add the data attributes for the image_quickload library
-core: 8.x
+core_version_requirement: ^8 || ^9
 package: Custom
