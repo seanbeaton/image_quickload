@@ -227,7 +227,7 @@ class ConfigForm extends ConfigFormBase {
    * @param \Drupal\Core\Form\FormStateInterface $form_state
    */
   public function CustomSubmit(array &$form, FormStateInterface $form_state) {
-    drupal_set_message("Custom Submit triggered");
+    \Drupal::messenger()->addStatus("Custom Submit triggered");
   }
 
   /**
